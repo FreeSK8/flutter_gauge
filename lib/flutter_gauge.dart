@@ -51,33 +51,36 @@ enum Animate{
 
 
 class FlutterGauge extends StatefulWidget {
-  int start;
-  int end;
-  String fontFamily;
-  double widthCircle;
-  double index;
-  double width;
-  Number number;
-  NumberInAndOut numberInAndOut;
-  CounterAlign counterAlign;
-  Hand hand;
-  bool isCircle;
-  double handSize;
-  bool isDecimal;
-  SecondsMarker secondsMarker;
-  double shadowHand;
-  Color circleColor;
-  Color handColor;
-  Color backgroundColor;
-  Color indicatorColor;
-  Color inactiveColor;
-  Color activeColor;
-  double paddingHand;
-  Animate animate;
-  TextStyle counterStyle;
-  TextStyle textStyle;
+  final int start;
+  final int end;
+  final String fontFamily;
+  final double widthCircle;
+  final double index;
+  final double width;
+  final Number number;
+  final NumberInAndOut numberInAndOut;
+  final CounterAlign counterAlign;
+  final Hand hand;
+  final bool isCircle;
+  final double handSize;
+  final bool isDecimal;
+  final SecondsMarker secondsMarker;
+  final double shadowHand;
+  final Color circleColor;
+  final Color handColor;
+  final Color backgroundColor;
+  final Color indicatorColor;
+  final Color inactiveColor;
+  final Color activeColor;
+  final double paddingHand;
+  final Animate animate;
+  final TextStyle counterStyle;
+  final TextStyle textStyle;
+  final bool reverseDigits;
+  final bool reverseDial;
 
-  FlutterGauge({this.isDecimal=true,this.inactiveColor = Colors.black,this.activeColor = Colors.red,this.textStyle,this.counterStyle,this.numberInAndOut = NumberInAndOut.inside,this.width/*,this.animate=Animate.none*/,this.paddingHand=30.0,this.circleColor = Colors.cyan,this.handColor = Colors.black,this.backgroundColor = Colors.cyan,this.indicatorColor = Colors.black,this.shadowHand=4.0,this.counterAlign=CounterAlign.bottom,this.number=Number.all,this.isCircle=true,this.hand= Hand.long,this.secondsMarker=SecondsMarker.all,this.handSize=30,this.start=0,this.end=100,@required this.index,this.fontFamily="",this.widthCircle=20,});
+
+  FlutterGauge({this.reverseDigits=false,this.reverseDial=false,this.isDecimal=true,this.inactiveColor = Colors.black,this.activeColor = Colors.red,this.textStyle,this.counterStyle,this.numberInAndOut = NumberInAndOut.outside,this.width,this.animate=Animate.none,this.paddingHand=30.0,this.circleColor,this.handColor = Colors.black,this.backgroundColor = Colors.cyan,this.indicatorColor = Colors.black,this.shadowHand=4.0,this.counterAlign=CounterAlign.bottom,this.number=Number.all,this.isCircle=true,this.hand= Hand.long,this.secondsMarker=SecondsMarker.all,this.handSize=30,this.start=0,this.end=100,@required this.index,this.fontFamily="",this.widthCircle=20,});
 
 
   @override
@@ -165,12 +168,14 @@ class _FlutterGaugeState extends State<FlutterGauge> {
   @override
   Widget build(BuildContext context) {
 //    animateHourHand(widget.index,7.0);
-//    eventObservable.add(widget.index);
+    eventObservable.add(widget.index);
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       mainAxisSize: MainAxisSize.max,
       children: <Widget>[
         FlutterGaugeMain(
+          reverseDial: widget.reverseDial,
+          reverseDigits: widget.reverseDigits,
             isDecimal: widget.isDecimal,
             counterStyle: widget.counterStyle,
             textStyle: widget.textStyle,
@@ -196,17 +201,7 @@ class _FlutterGaugeState extends State<FlutterGauge> {
             widthCircle : widget.widthCircle > 30 ? 30 :widget.widthCircle,
             inactiveColor : widget.inactiveColor,
             activeColor : widget.activeColor,
-            width : (
-                widget.width == null
-                    ?MediaQuery.of(context).size.width/2
-                    :widget.width < (MediaQuery.of(context).size.width/2)
-                    ?(MediaQuery.of(context).size.width/2)
-                    :(
-                    widget.width > (MediaQuery.of(context).size.width)
-                        ?MediaQuery.of(context).size.width
-                        :widget.width
-                )
-            )
+            width : widget.width
         )
       ],
     );

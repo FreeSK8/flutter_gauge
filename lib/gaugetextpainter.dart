@@ -2,8 +2,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_gauge/flutter_gauge.dart';
 
-import 'fluttergauge.dart';
-
 class GaugeTextPainter extends CustomPainter {
   final hourTickMarkLength = 30.0;
   final minuteTickMarkLength = 0.0;
@@ -25,26 +23,37 @@ class GaugeTextPainter extends CustomPainter {
   NumberInAndOut numberInAndOut;
   Color inactiveColor;
   Color activeColor;
+  bool reverseDigits;
 
-  GaugeTextPainter({this.inactiveColor, this.activeColor, this.numberInAndOut,this.widthCircle,this.secondsMarker,this.start, this.end, this.value,this.fontFamily,this.textStyle,this.number,})
+  GaugeTextPainter({this.inactiveColor, this.activeColor, this.numberInAndOut,this.widthCircle,this.secondsMarker,this.start, this.end, this.value,this.fontFamily,this.textStyle,this.number,this.reverseDigits})
       : tickPaint = new Paint(),
         textPainter = new TextPainter(
           textAlign: TextAlign.center,
           textDirection: TextDirection.rtl,
-        ){
+        )
+  {
     tickPaint.color = activeColor;
   }
   @override
-  void paint(Canvas canvas, Size size) {
+  void paint(Canvas canvas, Size size)
+  {
+    int textLabelInterval = ((end - start) / 10).ceil();
+
+    int textLabelCurrentPosition = 0;
+
     var tickMarkLength;
-    final angle = ((2/3) * 2) * pi / end;
+    final angle = ((2/3) * 2) * pi / (end - start);
 //    final radius = (size.width / 2)-widthCircle;
     final radius = (size.width / 2);
     canvas.save();
     // drawing
     canvas.translate(radius, radius);
     canvas.rotate(-2.1);
-    for (var i = 0; i <= end; i++) {
+
+    int lastlabel = -99999;
+
+    for (var i = 0; i <= end - start; i++)
+    {
       //make the length and stroke of the tick marker longer and thicker depending
       tickMarkLength = i % 5 == 0
           ? hourTickMarkLength
@@ -53,26 +62,20 @@ class GaugeTextPainter extends CustomPainter {
           ?hourTickMarkWidth
           : secondsMarker != SecondsMarker.seconds ?minuteTickMarkLength :hourTickMarkWidth;
 
-      if(value.toInt() == i){
+      // Set inactive color
+      if(value.toInt() < start + i){
         tickPaint.color = inactiveColor;
-
       }
 
-
-//      canvas.translate(-1, 0);
-//      canvas.transform(4.0);
       //seconds & minutes
-      if(i != 0 && i != end){ //(end / 1.5).toInt() > i && i != 0
+      if(i != 0 && i != end - start){ //(end / 1.5).toInt() > i && i != 0
         if(secondsMarker == SecondsMarker.all){
-
           canvas.drawLine(new Offset(0.0, -radius - 21), new Offset(0.0, -radius - 15 + tickMarkLength), tickPaint);
         }else if(secondsMarker == SecondsMarker.minutes){
           if(i % 5 == 0){
-
             canvas.drawLine(new Offset(0.0, -radius - 10), new Offset(0.0, -radius - 15 + tickMarkLength), tickPaint);
           }
         }else if(secondsMarker == SecondsMarker.secondsAndMinute){
-
           if(i % 5 == 0){
             canvas.drawLine(new Offset(0.0, -radius + 20), new Offset(0.0, -radius + 12), tickPaint);
           }else{
@@ -81,23 +84,33 @@ class GaugeTextPainter extends CustomPainter {
         }else if(secondsMarker == SecondsMarker.seconds){
           canvas.drawLine(new Offset(0.0, -radius - widthCircle/2), new Offset(0.0, -radius + widthCircle/2 ), tickPaint);
         }
-
       }
 
       //draw the text
-      if (i % (end < 100 ?5 :10) == 0 || i == end) {
-//                String label = i == 40 ? start.toString() : this.end.toString();
-        String label = i.toString();
+      if (i % textLabelInterval == 0 || i == end - start)
+      {
+        int labelValue = start + textLabelCurrentPosition * textLabelInterval;
+        int reverseValue = end - textLabelCurrentPosition * textLabelInterval;
+
+        textLabelCurrentPosition++;
+        //TODO: this hacky gauge project was further hacked
+
+        if ( i == end - start ){ labelValue = end; }
+
+        String label = reverseDigits ? reverseValue.toString() : labelValue.toString();
+
+        //print("*************************************************** i $i, $valueIncreasePerInterval, $textLabelCurrentPosition, $labelValue");
         canvas.save();
         if(numberInAndOut == NumberInAndOut.inside){
-          canvas.translate(i == 40 ? -0.0 : 0.0, -radius + (widthCircle * 2));
+          canvas.translate(0.0, -radius + (widthCircle*3));
         }else{
-          canvas.translate(i == 40 ? -0.0 : 0.0, -radius - (0));
+          canvas.translate(0.0, -radius - (0));
         }
 
         textPainter.text = new TextSpan(
           text: label,
           style: textStyle,
+
         );
 
         //helps make the text painted vertically
@@ -105,48 +118,26 @@ class GaugeTextPainter extends CustomPainter {
 
         textPainter.layout();
 
-
-        if(number == Number.all){
-          textPainter.paint(canvas, new Offset(-(textPainter.width / 2), -(textPainter.height / 1.5)));
-        }else if(number == Number.endAndStart){
-          if(i == 0 || i == end){
-            textPainter.paint(canvas, new Offset(-(textPainter.width / 2), -(textPainter.height / 2)));
-          }
-        }else if(number == Number.endAndCenterAndStart){
-          if(i == 0 || i == end ||  i == end ~/ 2){
+        if( labelValue >= lastlabel + textLabelInterval - 1 )
+        {
+          if(number == Number.all){
             textPainter.paint(canvas, new Offset(-(textPainter.width / 2), -(textPainter.height / 1.5)));
+            lastlabel = labelValue;
+          }else if(number == Number.endAndStart){
+            if(i == 0 || i == end - start ){
+              textPainter.paint(canvas, new Offset(-(textPainter.width / 2), -(textPainter.height / 2)));
+              lastlabel = labelValue;
+            }
+          }else if(number == Number.endAndCenterAndStart){
+            if(i == 0 || i == end - start ||  i == (end - start) ~/ 2){
+              textPainter.paint(canvas, new Offset(-(textPainter.width / 2), -(textPainter.height / 1.5)));
+              lastlabel = labelValue;
+            }
           }
         }
 
-
-
         canvas.restore();
       }
-
-
-      /*  if (i == end/2) {
-                String label = this.value.toStringAsFixed(1);
-                canvas.save();
-                canvas.translate(0.0, -radius + 50.0);
-
-                textPainter.text = new TextSpan(
-                    text: label,
-                    style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 30.0,
-                      fontFamily: fontFamily
-                    ),
-                );
-                canvas.rotate(-angle * i);
-
-                textPainter.layout();
-
-
-
-                textPainter.paint(canvas, new Offset(-(textPainter.width / 2), -(textPainter.height / 2)));
-
-                canvas.restore();
-            }*/
 
       canvas.rotate(angle);
     }
@@ -224,8 +215,8 @@ class GaugeTextCounter extends CustomPainter {
         }
 
         textPainter.text = new TextSpan(
-          text: label,
-          style: textStyle
+            text: label,
+            style: textStyle
         );
         canvas.rotate(-angle * i);
 
@@ -247,14 +238,4 @@ class GaugeTextCounter extends CustomPainter {
     return false;
   }
 }
-
-
-
-
-
-
-
-
-
-
 
