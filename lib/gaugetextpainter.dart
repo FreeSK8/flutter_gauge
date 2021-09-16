@@ -63,9 +63,14 @@ class GaugeTextPainter extends CustomPainter {
           : secondsMarker != SecondsMarker.seconds ?minuteTickMarkLength :hourTickMarkWidth;
 
       // Set inactive color
-      if(value.toInt() < start + i){
+      if (reverseDigits) {
+        if(end - value.toInt() < start + i){
+          tickPaint.color = inactiveColor;
+        }
+      } else if(value.toInt() < start + i){
         tickPaint.color = inactiveColor;
       }
+
 
       //seconds & minutes
       if(i != 0 && i != end - start){ //(end / 1.5).toInt() > i && i != 0
